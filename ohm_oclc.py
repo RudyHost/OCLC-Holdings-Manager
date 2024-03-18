@@ -55,7 +55,7 @@ class OhmOclc:
         failed_symbols = dict()
 
         for symbol in symbols:
-            add_url = f"https://worldcat.org/ih/institutionlist?instSymbols={quote(symbol)}&oclcNumber=953197097"
+            add_url = "https://metadata.api.oclc.org/worldcat/manage/institution/holdings/953197097/set"
             add = self.session.post(url=add_url, headers=self.headers)
             response = json.loads(add.text)
             if not add.ok:
@@ -65,8 +65,8 @@ class OhmOclc:
         time.sleep(10)
 
         for symbol in symbols:
-            delete_url = f"https://worldcat.org/ih/institutionlist?instSymbols={quote(symbol)}&oclcNumber=953197097&cascade=1"
-            delete = self.session.delete(url=delete_url, headers=self.headers)
+            delete_url = "https://metadata.api.oclc.org/worldcat/manage/institution/holdings/953197097/unset"
+            delete = self.session.post(url=delete_url, headers=self.headers)
             response = json.loads(delete.text)
             if not delete.ok:
                 failed_symbols[symbol] = response['message']
