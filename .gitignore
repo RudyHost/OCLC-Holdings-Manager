@@ -1,2 +1,6 @@
 .venv
+__pycache__
 *.json
+*.sqlite3
+extracts
+results
