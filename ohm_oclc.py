@@ -80,54 +80,49 @@ class OhmOclc:
         return failed_symbols
     
 
-    def unset_holding(self, oclc_number, symbols, results_directory = "results"):
+    def unset_holding(self, oclc_number, results_directory = "results"):
 
         if self.session == None:
             self.oclc_login()
 
-        divided_symbols = list(self.divide_chunks(symbols, 50))
-
-        for library_symbols in divided_symbols:
-            url_symbols = ','.join(library_symbols)
-            url = f"https://worldcat.org/ih/institutionlist?instSymbols={quote(url_symbols,safe='/,')}&oclcNumber={oclc_number}&cascade=1"
-            try:
-                delete = self.session.delete(url=url, headers=self.headers)           
-                file_name = f"{results_directory}/delete_{uuid.uuid1()}"
-                open(f'{file_name}.json', 'w').write(delete.text)
-            except:
-                self.retry += 1
-                sleep_time = 10 * self.retry
-                print(f"Failed operation on {oclc_number}, retrying in {sleep_time} seconds.")
-                self.session.close()
-                time.sleep(sleep_time)
-                self.oclc_login()
-                self.unset_holding(oclc_number, library_symbols)
+        url = f"https://metadata.api.oclc.org/worldcat/manage/institution/holdings/{oclc_number}/unset"
+        
+        try:
+            delete = self.session.post(url=url, headers=self.headers)           
+            file_name = f"{results_directory}/delete_{uuid.uuid1()}"
+            open(f'{file_name}.json', 'w').write(delete.text)
+        except:
+            self.retry += 1
+            sleep_time = 10 * self.retry
+            print(f"Failed operation on {oclc_number}, retrying in {sleep_time} seconds.")
+            self.session.close()
+            time.sleep(sleep_time)
+            self.oclc_login()
+            self.unset_holding(oclc_number)
+        
         self.session.close()
         self.retry = 0
 
 
-    def set_holding(self, oclc_number, symbols, results_directory = "results"):
+    def set_holding(self, oclc_number, results_directory = "results"):
 
         if self.session == None:
             self.oclc_login()
 
-        divided_symbols = list(self.divide_chunks(symbols, 50))
+        url = f"https://metadata.api.oclc.org/worldcat/manage/institution/holdings/{oclc_number}/set"
 
-        for library_symbols in divided_symbols:
-            url_symbols = ','.join(library_symbols)
-            url = f"https://worldcat.org/ih/institutionlist?instSymbols={quote(url_symbols,safe='/,')}&oclcNumber={oclc_number}"
-            try:
-                add = self.session.post(url=url, headers=self.headers)
-                file_name = f"{results_directory}/add_{uuid.uuid1()}"
-                open(f'{file_name}.json', 'w').write(add.text)
-            except:
-                self.retry += 1
-                sleep_time = 10 * self.retry
-                print(f"Failed operation on {oclc_number}, retrying in {sleep_time} seconds.")
-                self.session.close()
-                time.sleep(sleep_time)
-                self.oclc_login()
-                self.set_holding(oclc_number, library_symbols)
+        try:
+            add = self.session.post(url=url, headers=self.headers)
+            file_name = f"{results_directory}/add_{uuid.uuid1()}"
+            open(f'{file_name}.json', 'w').write(add.text)
+        except:
+            self.retry += 1
+            sleep_time = 10 * self.retry
+            print(f"Failed operation on {oclc_number}, retrying in {sleep_time} seconds.")
+            self.session.close()
+            time.sleep(sleep_time)
+            self.oclc_login()
+            self.set_holding(oclc_number)
         self.session.close()
         self.retry = 0
     
