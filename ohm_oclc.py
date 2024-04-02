@@ -50,6 +50,7 @@ class OhmOclc:
         failed_symbols = dict()
 
         for symbol in symbols:
+            print(f"Setting hold for {symbol}")
             self.oclc_login(symbol)
             add_url = "https://metadata.api.oclc.org/worldcat/manage/institution/holdings/953197097/set"
             add = self.session.post(url=add_url, headers=self.headers)
@@ -61,6 +62,7 @@ class OhmOclc:
         time.sleep(10)
 
         for symbol in symbols:
+            print(f"Unsetting hold for {symbol}")
             self.oclc_login(symbol)
             delete_url = "https://metadata.api.oclc.org/worldcat/manage/institution/holdings/953197097/unset"
             delete = self.session.post(url=delete_url, headers=self.headers)
@@ -69,7 +71,7 @@ class OhmOclc:
                 failed_symbols[symbol] = response['message']
             else:
                 response = json.loads(delete.text)
-                if response["entry"][0]["httpStatusCode"] != "HTTP 200 OK":
+                if not response["success"]:
                     failed_symbols[symbol] = response['message']
             #self.session.close()
         self.session.close()
