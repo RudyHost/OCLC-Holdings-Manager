@@ -11,11 +11,6 @@ import glob
 
 class OhmOclc:
 
-    def divide_chunks(self, l, n):
-        # looping till length l
-        for i in range(0, len(l), n):
-            yield l[i:i + n]
-
     def token_updater(self, new_token):
         self.token = new_token
         return None
