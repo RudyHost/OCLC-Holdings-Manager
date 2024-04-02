@@ -20,8 +20,8 @@ class OhmOclc:
         self.token = new_token
         return None
 
-    def oclc_login(self):
-        scopes = ['WorldCatMetadataAPI', 'refresh_token']
+    def oclc_login(self, institution_id):
+        scopes = ['WorldCatMetadataAPI', 'refresh_token', f'context:{institution_id}']
         token_url = 'https://oauth.oclc.org/token'
         extra = {
             'client_id': self.client_id,
