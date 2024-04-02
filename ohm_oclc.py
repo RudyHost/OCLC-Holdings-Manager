@@ -40,8 +40,8 @@ class OhmOclc:
 
     def test_wskey(self, holding_map):
 
-        if self.session == None:
-            self.oclc_login()
+        #if self.session == None:
+        #    self.oclc_login()
 
         symbols = set()
         for i, (ils, oclc) in enumerate(holding_map.items()):
@@ -50,6 +50,7 @@ class OhmOclc:
         failed_symbols = dict()
 
         for symbol in symbols:
+            self.oclc_login(symbol)
             add_url = "https://metadata.api.oclc.org/worldcat/manage/institution/holdings/953197097/set"
             add = self.session.post(url=add_url, headers=self.headers)
             response = json.loads(add.text)
@@ -60,6 +61,7 @@ class OhmOclc:
         time.sleep(10)
 
         for symbol in symbols:
+            self.oclc_login(symbol)
             delete_url = "https://metadata.api.oclc.org/worldcat/manage/institution/holdings/953197097/unset"
             delete = self.session.post(url=delete_url, headers=self.headers)
             response = json.loads(delete.text)
