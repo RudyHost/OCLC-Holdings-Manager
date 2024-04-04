@@ -79,10 +79,13 @@ class OhmOclc:
         return failed_symbols
     
 
-    def unset_holding(self, oclc_number, results_directory = "results"):
+    def unset_holding(self, oclc_number, institution_id, results_directory = "results"):
 
         if self.session == None:
-            self.oclc_login()
+            self.oclc_login(institution_id)
+
+        if self.session.token['context_institution_id'] != institution_id:
+            self.oclc_login(institution_id)
 
         url = f"https://metadata.api.oclc.org/worldcat/manage/institution/holdings/{oclc_number}/unset"
         
@@ -103,10 +106,13 @@ class OhmOclc:
         self.retry = 0
 
 
-    def set_holding(self, oclc_number, results_directory = "results"):
+    def set_holding(self, oclc_number, institution_id, results_directory = "results"):
 
         if self.session == None:
-            self.oclc_login()
+            self.oclc_login(institution_id)
+
+        if self.session.token['context_institution_id'] != institution_id:
+            self.oclc_login(institution_id)
 
         url = f"https://metadata.api.oclc.org/worldcat/manage/institution/holdings/{oclc_number}/set"
 
