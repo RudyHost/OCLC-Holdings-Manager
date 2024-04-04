@@ -14,7 +14,7 @@ class OhmDatabase:
 
     def compare_tables(self, left_table, right_table):
         # shows data that exists in left_table, but does not exist in right
-        self.c.execute(f"select oclcNum,library from '{left_table}' EXCEPT SELECT oclcNum,library from '{right_table}';")
+        self.c.execute(f"select library,oclcNum from '{left_table}' EXCEPT SELECT library,oclcNum from '{right_table}';")
         return self.c.fetchall()
 
     def commit_changes(self):
