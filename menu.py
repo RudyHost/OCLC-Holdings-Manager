@@ -64,6 +64,9 @@ while True:
         adds_sorted = sort_changes(adds)
         deletes_sorted = sort_changes(deletes)
 
+        #Remove unsorted changes
+        del adds, deletes
+
     elif menu_choice == "Send to OCLC":
         if len(adds_sorted) == 0 and len(deletes_sorted) == 0:
             print("Please compare changes first.")
