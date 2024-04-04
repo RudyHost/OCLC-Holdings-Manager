@@ -99,8 +99,8 @@ class OhmOclc:
             print(f"Failed operation on {oclc_number}, retrying in {sleep_time} seconds.")
             self.session.close()
             time.sleep(sleep_time)
-            self.oclc_login()
-            self.unset_holding(oclc_number)
+            self.oclc_login(institution_id)
+            self.unset_holding(oclc_number, institution_id)
         
         self.session.close()
         self.retry = 0
@@ -126,8 +126,8 @@ class OhmOclc:
             print(f"Failed operation on {oclc_number}, retrying in {sleep_time} seconds.")
             self.session.close()
             time.sleep(sleep_time)
-            self.oclc_login()
-            self.set_holding(oclc_number)
+            self.oclc_login(institution_id)
+            self.set_holding(oclc_number, institution_id)
         self.session.close()
         self.retry = 0
     
