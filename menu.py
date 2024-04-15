@@ -71,12 +71,14 @@ while True:
         if len(adds_sorted) == 0 and len(deletes_sorted) == 0:
             print("Please compare changes first.")
         else:
-            for oclc_num in deletes_sorted:
-                print(f'{oclc_num}: {deletes_sorted[oclc_num]}')
-                oclc_conn.unset_holding(oclc_num, deletes_sorted[oclc_num])
-            for oclc_num in adds_sorted:
-                print(f'{oclc_num}: {adds_sorted[oclc_num]}')
-                oclc_conn.set_holding(oclc_num, adds_sorted[oclc_num])
+            for institution in deletes_sorted:
+                for oclc_num in deletes_sorted[institution]:
+                    print(f'UNSET {institution}: {oclc_num}')
+                    oclc_conn.unset_holding(oclc_num, institution)
+            for institution in adds_sorted:
+                for oclc_num in adds_sorted[institution]:
+                    print(f'SET {institution}: {oclc_num}')
+                    oclc_conn.set_holding(oclc_num, institution)
 
     elif menu_choice == "Analyze Results":
         results_directories = glob.glob('*results')
