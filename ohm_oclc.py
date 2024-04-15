@@ -34,7 +34,7 @@ class OhmOclc:
             print(f"Failed OCLC API login, retrying in {sleep_time} seconds.")
             self.session.close()
             time.sleep(sleep_time)
-            self.oclc_login()
+            self.oclc_login(institution_id)
         
         self.retry = 0
 
@@ -78,6 +78,73 @@ class OhmOclc:
         
         return failed_symbols
     
+    def search_lbd(self, oclc_number, institution_id):
+        if self.session == None:
+            self.oclc_login(institution_id)
+
+        if self.session.token['context_institution_id'] != institution_id:
+            self.oclc_login(institution_id)
+
+        url = f"https://metadata.api.oclc.org/worldcat/search/my-local-bib-data?q=oc:{oclc_number}"
+        lbd_control = []
+        
+        try:
+            search = self.session.get(url=url, headers=self.headers)
+            print(url)
+
+            if not search.ok:
+                print("API call failed.")
+            else:
+                response = json.loads(search.text)
+                for record in response['localBibData']:
+                    lbd_control.append(record['controlNumber'])
+
+            return lbd_control
+        except:
+            self.retry += 1
+            sleep_time = 10 * self.retry
+            print(f"Failed operation on {oclc_number}, retrying in {sleep_time} seconds.")
+            self.session.close()
+            time.sleep(sleep_time)
+            self.oclc_login(institution_id)
+            self.unset_holding(oclc_number, institution_id)
+        
+        self.session.close()
+        self.retry = 0
+
+    def delete_lbd(self, lbd_control, institution_id):
+        if self.session == None:
+            self.oclc_login(institution_id)
+
+        if self.session.token['context_institution_id'] != institution_id:
+            self.oclc_login(institution_id)
+
+        url = f"https://metadata.api.oclc.org/worldcat/manage/lbds/{lbd_control}"
+        
+        try:
+            headers = {'Accept': 'application/marcxml+xml'}
+            delete = self.session.delete(url=url, headers=headers)
+            print(url)
+
+            response = json.loads(delete.text)
+            if not delete.ok:
+                print("API call failed.")
+            else:
+                response = json.loads(delete.text)
+                if not response["success"]:
+                    print(response)
+        except:
+            self.retry += 1
+            sleep_time = 10 * self.retry
+            print(f"Failed operation on {lbd_control}, retrying in {sleep_time} seconds.")
+            self.session.close()
+            time.sleep(sleep_time)
+            self.oclc_login(institution_id)
+            self.delete_lbd(lbd_control, institution_id)
+        
+        self.session.close()
+        self.retry = 0
+
 
     def unset_holding(self, oclc_number, institution_id, results_directory = "results"):
 
@@ -90,9 +157,22 @@ class OhmOclc:
         url = f"https://metadata.api.oclc.org/worldcat/manage/institution/holdings/{oclc_number}/unset"
         
         try:
-            delete = self.session.post(url=url, headers=self.headers)           
+            delete = self.session.post(url=url, headers=self.headers)
+            print(url)
             file_name = f"{results_directory}/delete_{uuid.uuid1()}"
             open(f'{file_name}.json', 'w').write(delete.text)
+
+            response = json.loads(delete.text)
+            if not delete.ok:
+                print("API call failed.")
+            else:
+                response = json.loads(delete.text)
+                if not response["success"]:
+                    print(response['message'])
+                    if "LBD" in response['message']:
+                        lbd_records = self.search_lbd(oclc_number, institution_id)
+                        for lbd in lbd_records:
+                            self.delete_lbd(lbd, institution_id)
         except:
             self.retry += 1
             sleep_time = 10 * self.retry
@@ -118,6 +198,7 @@ class OhmOclc:
 
         try:
             add = self.session.post(url=url, headers=self.headers)
+            print(url)
             file_name = f"{results_directory}/add_{uuid.uuid1()}"
             open(f'{file_name}.json', 'w').write(add.text)
         except:
