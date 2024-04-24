@@ -4,6 +4,7 @@ from ohm_settings import OhmSettings
 from ohm_database import OhmDatabase
 from ohm_marc import OhmMarc
 from ohm_oclc import OhmOclc
+import json
 
 def sort_changes(changes_list):
     changes = {}
@@ -16,6 +17,8 @@ def sort_changes(changes_list):
 
 adds_sorted = {}
 deletes_sorted = {}
+adds_sorted = json.load(open('adds', 'r'))
+deletes_sorted = json.load(open('deletes', 'r'))
 
 cli_ui.info_1("Welcome to OCLC Holdings Manager")
 
@@ -63,6 +66,10 @@ while True:
 
         adds_sorted = sort_changes(adds)
         deletes_sorted = sort_changes(deletes)
+
+        # Resume support
+        json.dump(adds_sorted, open('adds', 'w'))
+        json.dump(deletes_sorted, open('deletes', 'w'))
 
         #Remove unsorted changes
         del adds, deletes

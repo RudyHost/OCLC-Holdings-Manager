@@ -96,6 +96,8 @@ class OhmOclc:
                 print("API call failed.")
             else:
                 response = json.loads(search.text)
+                if response['numberOfRecords'] == 0:
+                    return lbd_control
                 for record in response['localBibData']:
                     lbd_control.append(record['controlNumber'])
 
@@ -126,13 +128,11 @@ class OhmOclc:
             delete = self.session.delete(url=url, headers=headers)
             print(url)
 
-            response = json.loads(delete.text)
+            #response = json.loads(delete.text)
             if not delete.ok:
                 print("API call failed.")
             else:
-                response = json.loads(delete.text)
-                if not response["success"]:
-                    print(response)
+                pass # Add proper handling of records
         except:
             self.retry += 1
             sleep_time = 10 * self.retry
@@ -160,7 +160,9 @@ class OhmOclc:
             delete = self.session.post(url=url, headers=self.headers)
             print(url)
             file_name = f"{results_directory}/delete_{uuid.uuid1()}"
-            open(f'{file_name}.json', 'w').write(delete.text)
+            with open(f'{file_name}.json', 'w') as results_file:
+                results_file.write(delete.text)
+                results_file.flush()
 
             response = json.loads(delete.text)
             if not delete.ok:
@@ -171,8 +173,10 @@ class OhmOclc:
                     print(response['message'])
                     if "LBD" in response['message']:
                         lbd_records = self.search_lbd(oclc_number, institution_id)
-                        for lbd in lbd_records:
-                            self.delete_lbd(lbd, institution_id)
+                        if lbd_records:
+                            for lbd in lbd_records:
+                                self.delete_lbd(lbd, institution_id)
+                            self.unset_holding(oclc_number, institution_id)
         except:
             self.retry += 1
             sleep_time = 10 * self.retry
