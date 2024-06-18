@@ -8,6 +8,7 @@ import time
 from urllib.parse import quote
 import uuid
 import glob
+import gc
 
 class OhmOclc:
 
@@ -55,9 +56,15 @@ class OhmOclc:
             add_url = "https://metadata.api.oclc.org/worldcat/manage/institution/holdings/953197097/set"
             add = self.session.post(url=add_url, headers=self.headers)
             response = json.loads(add.text)
-            if not add.ok:
-                failed_symbols[symbol] = response['message']
-            #self.session.close()
+            try:
+                if not add.ok:
+                    failed_symbols[symbol] = response['message']
+            finally:
+                add.close()
+            self.session.close()
+            del response
+            del add
+            gc.collect()
 
         time.sleep(10)
 
@@ -67,14 +74,23 @@ class OhmOclc:
             delete_url = "https://metadata.api.oclc.org/worldcat/manage/institution/holdings/953197097/unset"
             delete = self.session.post(url=delete_url, headers=self.headers)
             response = json.loads(delete.text)
-            if not delete.ok:
-                failed_symbols[symbol] = response['message']
-            else:
-                response = json.loads(delete.text)
-                if not response["success"]:
+            try: 
+                if not delete.ok:
                     failed_symbols[symbol] = response['message']
-            #self.session.close()
+                else:
+                    response = json.loads(delete.text)
+                    if not response["success"]:
+                        failed_symbols[symbol] = response['message']
+            finally:
+                delete.close()
+            self.session.close()
+            del response
+            del delete
+            gc.collect()
+        
         self.session.close()
+        self.session = None
+        gc.collect()
         
         return failed_symbols
     
@@ -109,7 +125,7 @@ class OhmOclc:
             self.session.close()
             time.sleep(sleep_time)
             self.oclc_login(institution_id)
-            self.unset_holding(oclc_number, institution_id)
+            return self.search_lbd(oclc_number, institution_id)
         
         self.session.close()
         self.retry = 0
@@ -163,6 +179,8 @@ class OhmOclc:
             with open(f'{file_name}.json', 'w') as results_file:
                 results_file.write(delete.text)
                 results_file.flush()
+                results_file.close()
+            del file_name
 
             response = json.loads(delete.text)
             if not delete.ok:
@@ -177,14 +195,21 @@ class OhmOclc:
                             for lbd in lbd_records:
                                 self.delete_lbd(lbd, institution_id)
                             self.unset_holding(oclc_number, institution_id)
+                        del lbd_records
+                del response
         except:
             self.retry += 1
             sleep_time = 10 * self.retry
             print(f"Failed operation on {oclc_number}, retrying in {sleep_time} seconds.")
             self.session.close()
+            self.session = None
             time.sleep(sleep_time)
             self.oclc_login(institution_id)
             self.unset_holding(oclc_number, institution_id)
+        
+        finally:
+            del delete
+            gc.collect()
         
         self.session.close()
         self.retry = 0
@@ -204,15 +229,25 @@ class OhmOclc:
             add = self.session.post(url=url, headers=self.headers)
             print(url)
             file_name = f"{results_directory}/add_{uuid.uuid1()}"
-            open(f'{file_name}.json', 'w').write(add.text)
+            with open(f'{file_name}.json', 'w') as results_file:
+                results_file.write(add.text)
+                results_file.flush()
+                results_file.close()
+            del file_name
+
         except:
             self.retry += 1
             sleep_time = 10 * self.retry
             print(f"Failed operation on {oclc_number}, retrying in {sleep_time} seconds.")
-            self.session.close()
+            self.session = None
             time.sleep(sleep_time)
             self.oclc_login(institution_id)
             self.set_holding(oclc_number, institution_id)
+
+        finally:
+            del add
+            gc.collect()
+
         self.session.close()
         self.retry = 0
     
