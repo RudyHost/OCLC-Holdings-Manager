@@ -116,19 +116,22 @@ class OhmOclc:
                     return lbd_control
                 for record in response['localBibData']:
                     lbd_control.append(record['controlNumber'])
-
-            return lbd_control
+                del response
         except:
             self.retry += 1
             sleep_time = 10 * self.retry
             print(f"Failed operation on {oclc_number}, retrying in {sleep_time} seconds.")
-            self.session.close()
+            self.session = None
             time.sleep(sleep_time)
             self.oclc_login(institution_id)
-            return self.search_lbd(oclc_number, institution_id)
+            lbd_control = self.search_lbd(oclc_number, institution_id)
         
-        self.session.close()
-        self.retry = 0
+        finally:
+            del search
+            self.session.close()
+            self.retry = 0
+            gc.collect()
+            return lbd_control
 
     def delete_lbd(self, lbd_control, institution_id):
         if self.session == None:
