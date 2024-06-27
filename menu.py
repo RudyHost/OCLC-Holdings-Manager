@@ -5,6 +5,26 @@ from ohm_database import OhmDatabase
 from ohm_marc import OhmMarc
 from ohm_oclc import OhmOclc
 import json
+import os
+
+adds_sorted = {}
+deletes_sorted = {}
+resume_data = {}
+settings_file = None
+
+def check_resume():
+    if not os.path.isfile('resume.json'):
+        return False
+    with open("resume.json") as resume_file:
+        resume_data = json.load(resume_file)
+        resume_file.close()
+    for library in resume_data["adds"]:
+        if len(library) > 0:
+            return True
+    for library in resume_data["deletes"]:
+        if len(library) > 0:
+            return True
+    return False
 
 def sort_changes(changes_list):
     changes = {}
@@ -15,17 +35,25 @@ def sort_changes(changes_list):
             changes[entry[0]].append(entry[1])
     return changes
 
-adds_sorted = {}
-deletes_sorted = {}
-adds_sorted = json.load(open('adds', 'r'))
-deletes_sorted = json.load(open('deletes', 'r'))
+
 
 cli_ui.info_1("Welcome to OCLC Holdings Manager")
 
+if check_resume():
+    answer = input("Interupted session found, resume? (y/n)").lower()
+    if answer[0] == "y":
+        resume_data = json.load(open('resume.json'))
+        settings_file = resume_data["settings_file"]
+        adds_sorted = resume_data["adds"]
+        deletes_sorted = resume_data["deletes"]
+
+
 # Read in the settings
-settings_files = glob.glob('settings*.json')
-settings_file = cli_ui.ask_choice("Which settings file should I use?", choices=settings_files, sort=True)
+if not settings_file:
+    settings_files = glob.glob('settings*.json')
+    settings_file = cli_ui.ask_choice("Which settings file should I use?", choices=settings_files, sort=True)
 settings = OhmSettings(settings_file)
+resume_data["settings_file"] = settings_file
 
 # load sqlite3 database
 database = OhmDatabase(settings.database)
@@ -68,8 +96,9 @@ while True:
         deletes_sorted = sort_changes(deletes)
 
         # Resume support
-        json.dump(adds_sorted, open('adds', 'w'))
-        json.dump(deletes_sorted, open('deletes', 'w'))
+        resume_data["adds"] = adds_sorted
+        resume_data["deletes"] = deletes_sorted
+        json.dump(resume_data, open('resume.json', 'w'))
 
         #Remove unsorted changes
         del adds, deletes
