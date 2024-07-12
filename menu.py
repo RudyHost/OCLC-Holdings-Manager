@@ -6,11 +6,13 @@ from ohm_marc import OhmMarc
 from ohm_oclc import OhmOclc
 import json
 import os
+import copy
 
 adds_sorted = {}
 deletes_sorted = {}
 resume_data = {}
 settings_file = None
+
 
 def check_resume():
     if not os.path.isfile('resume.json'):
@@ -19,10 +21,10 @@ def check_resume():
         resume_data = json.load(resume_file)
         resume_file.close()
     for library in resume_data["adds"]:
-        if len(library) > 0:
+        if len(resume_data["adds"][library]) > 0:
             return True
     for library in resume_data["deletes"]:
-        if len(library) > 0:
+        if len(resume_data["deletes"][library]) > 0:
             return True
     return False
 
@@ -44,16 +46,19 @@ if check_resume():
     if answer[0] == "y":
         resume_data = json.load(open('resume.json'))
         settings_file = resume_data["settings_file"]
-        adds_sorted = resume_data["adds"]
-        deletes_sorted = resume_data["deletes"]
+        adds_sorted = copy.deepcopy(resume_data["adds"])
+        deletes_sorted = copy.deepcopy(resume_data["deletes"])
 
+resume_file = open("resume.json", "w")
 
 # Read in the settings
 if not settings_file:
     settings_files = glob.glob('settings*.json')
     settings_file = cli_ui.ask_choice("Which settings file should I use?", choices=settings_files, sort=True)
 settings = OhmSettings(settings_file)
+
 resume_data["settings_file"] = settings_file
+json.dump(resume_data, resume_file)
 
 # load sqlite3 database
 database = OhmDatabase(settings.database)
@@ -96,9 +101,9 @@ while True:
         deletes_sorted = sort_changes(deletes)
 
         # Resume support
-        resume_data["adds"] = adds_sorted
-        resume_data["deletes"] = deletes_sorted
-        json.dump(resume_data, open('resume.json', 'w'))
+        resume_data["adds"] = copy.deepcopy(adds_sorted)
+        resume_data["deletes"] = copy.deepcopy(deletes_sorted)
+        json.dump(resume_data, resume_file)
 
         #Remove unsorted changes
         del adds, deletes
@@ -108,13 +113,23 @@ while True:
             print("Please compare changes first.")
         else:
             for institution in deletes_sorted:
-                for oclc_num in deletes_sorted[institution]:
-                    print(f'UNSET {institution}: {oclc_num}')
+                for oclc_num in deletes_sorted[str(institution)]:
+                    print(f'UNSET {str(institution)}: {oclc_num}')
                     oclc_conn.unset_holding(oclc_num, institution)
+                    resume_data["deletes"][str(institution)].remove(str(oclc_num))
+                    resume_file.seek(0)
+                    json.dump(resume_data, resume_file)
+                    resume_file.truncate()
+                    resume_file.flush()
             for institution in adds_sorted:
-                for oclc_num in adds_sorted[institution]:
-                    print(f'SET {institution}: {oclc_num}')
+                for oclc_num in adds_sorted[str(institution)]:
+                    print(f'SET {str(institution)}: {oclc_num}')
                     oclc_conn.set_holding(oclc_num, institution)
+                    resume_data["adds"][str(institution)].remove(str(oclc_num))
+                    resume_file.seek(0)
+                    json.dump(resume_data, resume_file)
+                    resume_file.truncate()
+                    resume_file.flush()
 
     elif menu_choice == "Analyze Results":
         results_directories = glob.glob('*results')
