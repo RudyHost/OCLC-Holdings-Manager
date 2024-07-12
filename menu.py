@@ -41,13 +41,16 @@ def sort_changes(changes_list):
 
 cli_ui.info_1("Welcome to OCLC Holdings Manager")
 
-if check_resume():
-    answer = input("Interupted session found, resume? (y/n)").lower()
-    if answer[0] == "y":
-        resume_data = json.load(open('resume.json'))
-        settings_file = resume_data["settings_file"]
-        adds_sorted = copy.deepcopy(resume_data["adds"])
-        deletes_sorted = copy.deepcopy(resume_data["deletes"])
+try:
+    if check_resume():
+        answer = input("Interupted session found, resume? (y/n)").lower()
+        if answer[0] == "y":
+            resume_data = json.load(open('resume.json'))
+            settings_file = resume_data["settings_file"]
+            adds_sorted = copy.deepcopy(resume_data["adds"])
+            deletes_sorted = copy.deepcopy(resume_data["deletes"])
+except:
+    pass
 
 resume_file = open("resume.json", "w")
 
