@@ -62,8 +62,10 @@ class OhmOclc:
             finally:
                 add.close()
             self.session.close()
-            del response
-            del add
+            if response in locals():
+                del response
+            if add in locals():
+                del add
             gc.collect()
 
         time.sleep(10)
@@ -84,8 +86,10 @@ class OhmOclc:
             finally:
                 delete.close()
             self.session.close()
-            del response
-            del delete
+            if response in locals():
+                del response
+            if delete in locals():
+                del delete
             gc.collect()
         
         self.session.close()
