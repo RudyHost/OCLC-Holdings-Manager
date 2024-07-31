@@ -62,9 +62,9 @@ class OhmOclc:
             finally:
                 add.close()
             self.session.close()
-            if response in locals():
+            if 'response' in locals():
                 del response
-            if add in locals():
+            if 'add' in locals():
                 del add
             gc.collect()
 
@@ -86,9 +86,9 @@ class OhmOclc:
             finally:
                 delete.close()
             self.session.close()
-            if response in locals():
+            if 'response' in locals():
                 del response
-            if delete in locals():
+            if 'delete' in locals():
                 del delete
             gc.collect()
         
@@ -131,7 +131,7 @@ class OhmOclc:
             lbd_control = self.search_lbd(oclc_number, institution_id)
         
         finally:
-            if search in locals():
+            if 'search' in locals():
                 del search
             self.session.close()
             self.retry = 0
@@ -216,7 +216,7 @@ class OhmOclc:
             self.unset_holding(oclc_number, institution_id)
         
         finally:
-            if delete in locals():
+            if 'delete' in locals():
                 del delete
             gc.collect()
         
@@ -254,7 +254,7 @@ class OhmOclc:
             self.set_holding(oclc_number, institution_id)
 
         finally:
-            if add in locals():
+            if 'add' in locals():
                 del add
             gc.collect()
 
