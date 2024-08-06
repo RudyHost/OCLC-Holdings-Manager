@@ -276,23 +276,26 @@ class OhmOclc:
 
         for file_name in file_list:
             with open(file_name) as result_log:
-                result = json.load(result_log)
+                try:
+                    result = json.load(result_log)
                 
-                oclc_symbol = result['institutionSymbol']
-                oclc_number = result['requestedControlNumber']
-                current_oclc_number = result['controlNumber']
-                success = result['success']
-                
-                if success:
-                    if oclc_symbol not in successful_action:
-                        successful_action[oclc_symbol] = list()
-                    successful_action[oclc_symbol].append(oclc_number)
-                else:
-                    if oclc_symbol not in unsuccessful_action:
-                        unsuccessful_action[oclc_symbol] = list()
-                    unsuccessful_action[oclc_symbol].append(oclc_number)
-                if oclc_number != current_oclc_number:
-                    updated_oclc[oclc_number] = current_oclc_number
+                    oclc_symbol = result['institutionSymbol']
+                    oclc_number = result['requestedControlNumber']
+                    current_oclc_number = result['controlNumber']
+                    success = result['success']
+                    
+                    if success:
+                        if oclc_symbol not in successful_action:
+                            successful_action[oclc_symbol] = list()
+                        successful_action[oclc_symbol].append(oclc_number)
+                    else:
+                        if oclc_symbol not in unsuccessful_action:
+                            unsuccessful_action[oclc_symbol] = list()
+                        unsuccessful_action[oclc_symbol].append(oclc_number)
+                    if oclc_number != current_oclc_number:
+                        updated_oclc[oclc_number] = current_oclc_number
+                except:
+                    print(f'error processing {file_name}.')
         
         return (successful_action, unsuccessful_action, updated_oclc)
 
